@@ -1,0 +1,104 @@
+export default {
+  async fetch(request, env, ctx) {
+    const BOT_TOKEN = env.BOT_TOKEN;
+    const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+
+    if (request.method === 'POST') {
+      const update = await request.json();
+
+      if (update.message) {
+        const chatId = update.message.chat.id;
+        const text = update.message.text || '';
+        const firstName = update.message.from.first_name || 'Гость';
+        const lastName = update.message.from.last_name || '';
+
+        let replyMarkup = null;
+        let replyText = '';
+
+        // КОМАНДА /start
+        if (text === '/start' || text === '/hello' || text === '/main') {
+          replyText = `Hey, ${firstName}! 👋\n\nChoose what interests you:`;
+          replyMarkup = {
+            keyboard: [
+              [{ text: '🧐 Languages' }, { text: '💻 IT Channel' }],
+              [{ text: '🐙 GitHub' }, { text: '😌 Behance' }]
+            ],
+            resize_keyboard: true,
+            one_time_keyboard: false
+          };
+        }
+        // КОМАНДА /help
+        else if (text === '/help') {
+          replyText = '🤖 Команды:\n/start - Начать\n/help - Помощь';
+        }
+        // КНОПКА: Languages 🧐
+        else if (text.includes('Languages')) {
+          replyText = 'Welcome to my channel!';
+          replyMarkup = {
+            inline_keyboard: [
+              [{ text: 'Join the channel', url: 'https://t.me/lernendeutschzussamen' }]
+            ]
+          };
+        }
+        // КНОПКА: Personal life 😎
+        else if (text.includes('IT Channel')) {
+          replyText = 'Welcome to my channel!';
+          replyMarkup = {
+            inline_keyboard: [
+              [{ text: 'Join the channel', url: 'https://t.me/linadthoughts' }]
+            ]
+          };
+        }
+        // КНОПКА: Instagram 🤪
+        else if (text.includes('GitHub')) {
+          replyText = 'Thank you for your interest!';
+          replyMarkup = {
+            inline_keyboard: [
+              [{ text: 'Open GitHub', url: 'https://github.com/Karnakovdanya?tab=repositories' }]
+            ]
+          };
+        }
+        // КНОПКА: Behance 😌
+        else if (text.includes('Behance')) {
+          replyText = 'Thank you for your interest!';
+          replyMarkup = {
+            inline_keyboard: [
+              [{ text: 'Open Behance', url: 'https://www.behance.net/danya_karnakov' }]
+            ]
+          };
+        }
+        // ТЕКСТ: привет
+        else if (text.toLowerCase() === 'привет' || text.toLowerCase() === 'hey') {
+          replyText = `Hey, ${firstName} ${lastName}! 😊`;
+        }
+        // ТЕКСТ: id
+        else if (text.toLowerCase() === 'id') {
+          replyText = `Your ID: ${update.message.from.id}`;
+        }
+        // ОСТАЛЬНОЕ
+        else if (text.trim()) {
+          replyText = `You wrote: "${text}" 🤔`;
+        }
+
+        const payload = {
+          chat_id: chatId,
+          text: replyText
+        };
+
+        if (replyMarkup) {
+          payload.reply_markup = replyMarkup;
+        }
+
+        await fetch(`${TELEGRAM_API}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      return new Response('OK', { status: 200 });
+    }
+
+    return new Response('Bot is running!');
+  }
+};
